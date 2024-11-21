@@ -5,45 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speech to Text App</title>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Full viewport height */
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4; /* Light background for better readability */
+        }
+
+        #container {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        pre {
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>Speech-to-Text Transcription</h1>
-    <button id="start">Start Transcription</button>
-    <button id="stop">Stop Transcription</button>
-    <h2>Transcribed Text:</h2>
-    <pre id="transcript"></pre>
+    <div id="container">
+        <h1>Speech-to-Text Transcription</h1>
+        <button id="start">Start Transcription</button>
+        <button id="stop">Stop Transcription</button>
+        <h2>Transcribed Text:</h2>
+        <pre id="transcript"></pre>
+    </div>
 
     <script>
         $(document).ready(function() {
+            let pollInterval; // Variable to hold the interval ID
+    
+            // Start transcription
             $('#start').click(function() {
                 $.get('/start', function(data) {
                     console.log(data.message);
+    
+                    // Start polling for transcripts if not already polling
+                    if (!pollInterval) {
+                        pollInterval = setInterval(function() {
+                            $.ajax({
+                                type: 'GET',
+                                url: '/transcript',
+                                dataType: 'json',
+                                success: function(data) {
+                                    console.log(data);
+                                    if (data && data.transcript) {
+                                        $('#transcript').text(data.transcript);
+                                    } else {
+                                        $('#transcript').text('No transcription available yet.');
+                                    }
+                                },
+                                error: function(err) {
+                                    console.error('Error fetching transcript:', err);
+                                }
+                            });
+                        }, 1000);
+                    }
                 });
             });
-
+    
+            // Stop transcription
             $('#stop').click(function() {
                 $.get('/stop', function(data) {
                     console.log(data.message);
-                });
-            });
-
-            // Poll for transcripts every second
-            setInterval(function() {
-                $.ajax({
-                    type: 'GET',
-                    url: '/transcript',
-                    dataType: 'json',
-                    success: function(data) {
-                        console.log(data);
-                        if (data && data.transcript) {
-                            $('#transcript-text').text(data.transcript);
-                        } else {
-                            $('#transcript-text').text('');
-                        }
+    
+                    // Stop polling for transcripts
+                    if (pollInterval) {
+                        clearInterval(pollInterval);
+                        pollInterval = null; // Reset the interval variable
                     }
                 });
-            }, 1000);
+            });
         });
     </script>
+    
 </body>
 </html>

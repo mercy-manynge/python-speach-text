@@ -18,9 +18,10 @@ def on_data(transcript: aai.RealtimeTranscript):
 
     if isinstance(transcript, aai.RealtimeFinalTranscript):
         transcribed_text += transcript.text + "\n"
-        print("Transcribed:", transcript.text)
+        print("Transcribed:", transcript.text)  # Verify text here
     else:
-        print("Received:", transcript.text)
+        print("Received partial:", transcript.text)
+
 
 def on_error(error):
     print("Error:", error)
@@ -54,8 +55,11 @@ def index():
 
 @app.route('/start')
 def start():
+    global transcribed_text
+    transcribed_text = ""  # Clear previous transcript
     threading.Thread(target=start_transcription).start()
     return jsonify({"message": "Transcription started!"})
+
 
 @app.route('/stop')
 def stop():
@@ -63,13 +67,20 @@ def stop():
     if transcriber is not None:
         transcriber.close()
         transcriber = None
+        print("Transcriber closed")
     return jsonify({"message": "Transcription stopped!"})
 
+
+# @app.route('/transcript')
+# def transcript():
+#     global transcribed_text
+#     print("Transcript:", transcribed_text)
+#     return jsonify({"transcript": transcribed_text or ""})
 @app.route('/transcript')
 def transcript():
     global transcribed_text
-    print("Transcript:", transcribed_text)
-    return jsonify({"transcript": transcribed_text or ""})
+    return jsonify({"transcript": transcribed_text})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
