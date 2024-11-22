@@ -1,9 +1,13 @@
 import assemblyai as aai
 from flask import Flask, render_template, jsonify
+import os
+from dotenv import load_dotenv
 import threading
 
 app = Flask(__name__)
-aai.settings.api_key = "59993d1eba9a4a459f946ccd654d3014"
+load_dotenv()
+
+aai.settings.api_key = os.getenv('API_KEY')
 
 transcriber = None
 transcribed_text = ""
